@@ -14,11 +14,9 @@
 ## Escopo das Entregas
 
 * [**Desafio 02 — Modelagem e estruturação do banco de dados**](./Desafio%202/)
-
-A pasta está dividida em três arquivos:
-* `01_estrutura.md`: Apresenta a divisão do banco entre as três entidades
-* `02_dicionario.md`: Dicionário de dados mapeando tipos, restrições e regras de negócio de cada campo.
-* `03_banco.sql`: Script DDL executável para criação do banco de dados `schulz.db`.
+    * `01_estrutura.md`: Apresenta a divisão do banco entre as três entidades
+    * `02_dicionario.md`: Dicionário de dados mapeando tipos, restrições e regras de negócio de cada campo.
+    * `03_banco.sql`: Script DDL executável para criação do banco de dados `schulz.db`.
 
 ## Tecnologias Utilizadas
 * **SGBD:** SQLite
