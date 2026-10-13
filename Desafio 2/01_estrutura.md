@@ -1,36 +1,37 @@
 # Estrutura do Banco de Dados Relacional — Projeto Schulz S.A.
 
 ## 1. Contexto Operacional e Objetivo
-O objetivo deste trabalho é modernizar a emissão de certificados de calibração da Schulz S.A., migrando o processo manual, com utilização de planilhas eletrônicas, para um processo automatizado, de forma a: eliminar erros manuais de digitação, corrigir falhas nas fórmulas de cálculo hoje usadas nas planilhas, reunir os registros metrológicos em um único lugar e liberar os técnicos metrologistas de tarefas repetitivas que hoje consomem boa parte do tempo do laboratório.
+O objetivo deste projeto é modernizar a gestão e emissão de certificados de calibração no laoratório da da **Schulz S.A.**, migrando a operação manual, realizada através de planilhas eletrônicas, para um processo automatizado, utilizando o **Banco de Dados Relacional em SGBD SQLite**.
 
-## 2. Modelagem de Dados
-A modelagem física em SQLite foi dividida em **7 entidades relacionais**, garantindo a separação clara de responsabilidades:
+A arquitetura foi desenhada para eliminar redundâncias, garantir a rastreabilidade integral das medições colhidas nas Máquinas de Medição por Coordenadas (MMC) e automatizar a emissão dos Certificados de Calibração, assegurando rigorosa conformidade com a norma **ABNT NBR ISO/IEC 17025:2017**.
 
-1. **`fornecedor_setor`:**
-   - Cadastra os setores solicitantes e fornecedores de serviços/equipamentos da Schulz S.A., vinculando siglas operacionais e responsáveis pelo cadastro.
-2. **`instrumento`:**
-   - Armazena os dados cadastrais dos dispositivos de controle e medição (TAG, número de série, fabricante, número de desenho técnico `drawing_no` e código de peça `part_no`), ligando-se ao setor proprietário via `fk_fornecedor_id`.
-3. **`metrologista`:**
-   - Registra os técnicos habilitados para realizar as inspeções no laboratório, contendo matrícula, nome e turno de trabalho com validação de domínio (`CHECK`).
-4. **`maquina_mmc`:**
-   - Cadastra os equipamentos de medição por coordenadas (código MMC), os programas de medição executados (`measurement_plan`) e o horário das leituras.
-5. **`certificado_calibracao`:**
-   - Entidade centralizadora dos eventos de calibração. Consolida o número do certificado, a data do ensaio e o parecer de conformidade, conectando o metrologista (`fk_metrologista_id`), o instrumento (`fk_instrumento_id`) e a máquina MMC (`fk_mmc_id`).
-6. **`medicao_caracteristica`:**
-   - Armazena cada parâmetro dimensional medido (planicidade, diâmetro, etc.), registrando dimensão nominal, tolerâncias superior/inferior, valor lido e desvio apurado, vinculando-se ao certificado correspondente (`fk_certificado_id`).
-7. **`incerteza_medicao`:**
-   - Isola a camada de física/metrologia avançada, registrando o cálculo da incerteza expandida ($U$) e o fator de abrangência ($k$) para cada medição específica (`fk_medicao_id`).
+## 2. Modelagem dos dados em 3 Entidades Principais
+Para atender ao escopo físico do Desafio 02 no SQLite, as entidades de negócio foram consolidadas de forma otimizada em **3 tabelas integradas**:
 
-## 3. Justificativa Técnica: Normalização e Eliminação de Anomalias
-No modelo original baseado em Excel, informações de metrologistas, dados do equipamento, especificações de máquina MMC e tolerâncias eram repetidos linha a linha. Essa redundância gerava sérias anomalias operacionais:
+1. **`tecnico_solicitante`**:
+   - Unifica as pessoas e departamentos envolvidos. O campo `papel` (`CHECK ('METROLOGISTA', 'SIGNATARIO', 'SOLICITANTE')`) diferencia o metrologista que executa o ensaio, o responsável técnico que assina o certificado e setor solicitante.
+   - Inclui controle de status do funcionário ou departamento por meio do campo `ativo` (0 ou 1).
 
-* **Inconsistência de Dados (Redundância):** Variações de grafia em nomes de fornecedores, setores e técnicos entre diferentes planilhas.
-* **Riscos em Auditorias ISO/IEC 17025:** Risco de alteração não autorizada nos limites de tolerância ou nas dimensões nominais de referência.
-* **Dificuldade de Atualização:** A alteração de um dado cadastral (ex: mudança de turno de um metrologista ou de setor de um instrumento) exigia a alteração de múltiplos arquivos antigos.
+2. **`equipamento`**:
+   - Consolida em uma única estrutura os equipamentos ou dispositivos inspecionados e as próprias Máquinas de Medição por Coordenadas (MMC) utilizadas como padrão.
+   - O campo `tipo` (`'MMC'` ou `'INSTRUMENTO'`) categoriza o dispositivo.
+   - Guarda TAG único, número de série, fabricante, modelo, especificações do desenho (`drawing_no`), código de peça (`part_no`), dados de rastreabilidade e a referência (`fk_solicitante_id`) ao setor ou responsável proprietário.
 
-A modelagem relacional aplicada alcança a **Terceira Forma Normal (3FN)**:
-- **Chaves Primárias Únicas (`PK`):** Todos os cadastros base (técnicos, instrumentos, máquinas e setores) possuem identificadores exclusivos.
-- **Integridade Referencial com Chaves Estrangeiras (`FK`):** A amarração do banco obriga que todo certificado e toda medição pertençam a entidades válidas. As restrições `ON DELETE RESTRICT` impedem a exclusão acidental de cadastros que possuam histórico de calibração associado.
+3. **`medicao`**:
+   - Registra o resultado dimensional de cada característica aferida no software de medição.
+   - Realiza a amarração de rastreabilidade através de 3 Chaves Estrangeiras (`FK`):
+     - `fk_equipamento_id` $\rightarrow$ Equipamento ou peça que foi calibrada.
+     - `fk_padrao_id` $\rightarrow$ Máquina MMC / Padrão utilizado no ensaio.
+     - `fk_tecnico_id` $\rightarrow$ Metrologista responsável pela execução.
+   - Consolida dados do certificado, plano de medição, tolerâncias, valores lidos, desvios e o status final (`'APROVADO'`, `'REPROVADO'`, `'PENDENTE'`).
 
-## 5. Diagrama Relacional de Blocos
-![Diagrama de Entidade Relacionamento](./DER%20Lógico%20-%20Banco%20Schulz.png)
+## 3. Integridade de Dados, Validações e Normalização
+A solução resolve os problemas de consistência e integridade dos dados no modelo em planilhas através da aplicação de restrições nativas do SGBD:
+
+* **Validação Automática de Desvios:** O banco de dados garante matematicamente a consistência dos cálculos através da restrição `CHECK (abs(desvio - (valor_obtido - valor_nominal)) < 0.000001)`.
+* **Prevenção de Duplicidade:** A restrição composta `UNIQUE (fk_equipamento_id, data_hora_medicao, codigo)` impede a inserção duplicada de uma mesma característica para o mesmo equipamento no mesmo instante de medição.
+* **Integridade Referencial:** Restrições `FOREIGN KEY ... ON DELETE RESTRICT` e a instrução `PRAGMA foreign_keys = ON;` impedem a exclusão acidental de equipamentos ou técnicos que possuam histórico de medição.
+* **Otimização de Consultas:** Criação de Índices secundários (`idx_equipamento_solicitante`, `idx_medicao_equipamento` e `idx_medicao_tecnico`) para acelerar a geração de relatórios e pesquisas de histórico metrológico.
+
+## 4. Diagrama ER Conceitual
+![Diagrama de Entidade Relacionamento](./DER_Banco_Schulz.png)
