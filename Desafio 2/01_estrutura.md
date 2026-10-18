@@ -1,44 +1,93 @@
-# Estrutura do Banco de Dados Relacional — Projeto Schulz S.A.
+# Estrutura do Banco de Dados — Projeto Aplicado I (Schulz S.A.)
 
-## 1\. Contexto Operacional e Objetivo
+**UniSENAI · ADS · Projeto Aplicado I — Entrega 02: Modelagem e Implementação de Banco de Dados**
+Prof. MSc. Hugo Menezes Barra · Empresa parceira: Schulz S.A.
 
-O objetivo deste projeto é modernizar a gestão e emissão de certificados de calibração no laoratório da da **Schulz S.A.**, migrando a operação manual, realizada através de planilhas eletrônicas, para um processo automatizado, utilizando o **Banco de Dados Relacional em SGBD SQLite**.
+## 1. Contexto
 
-A arquitetura foi desenhada para eliminar redundâncias, garantir a rastreabilidade integral das medições colhidas nas Máquinas de Medição por Coordenadas (MMC) e automatizar a emissão dos Certificados de Calibração, assegurando rigorosa conformidade com a norma **ABNT NBR ISO/IEC 17025:2017**.
+Na Entrega 01 mapeamos o processo de emissão de certificados de calibração do laboratório de metrologia da Schulz. Hoje ele depende de planilhas Excel copiadas e coladas entre arquivos, o que causou anomalias como desvios digitados à mão, unidades divergentes e cadastros repetidos.
+Nesta entrega, o Banco de Dados Relacional (SQLite) passa a ser a **fonte única de verdade**: os dados de equipamentos, técnicos e medições ficam guardados com histórico, integridade e segurança.
 
-## 2\. Modelagem dos dados em 3 Entidades Principais
+## 2. As 3 entidades principais
 
-Para atender ao escopo físico do Desafio 02 no SQLite, as entidades de negócio foram consolidadas de forma otimizada em **3 tabelas integradas**:
+O banco foi dividido em três entidades. Cada uma responde a uma pergunta do processo de calibração.
 
-1. **`tecnico_solicitante`**:
+| Entidade (tabela) | Pergunta que responde | O que armazena |
+|---|---|---|
+| `tecnico_solicitante` | **Quem** mediu, conferiu, assinou ou pediu o serviço? | Matrícula, nome, cargo, papel (metrologista, signatário ou solicitante), setor e turno |
+| `equipamento` | **O que** foi calibrado e **com o quê**? | TAG, nome, tipo (MMC ou instrumento), número de série, fabricante, modelo, faixa de medição e rastreabilidade do padrão |
+| `medicao` | **Qual** foi o resultado de cada característica? | Parâmetro, valor nominal, tolerâncias, medidas 1 e 2, valor obtido, desvio, unidade e status |
 
-   - Unifica as pessoas e departamentos envolvidos. O campo `papel` (`CHECK ('METROLOGISTA', 'SIGNATARIO', 'SOLICITANTE')`) diferencia o metrologista que executa o ensaio, o responsável técnico que assina o certificado e setor solicitante.  
-   - Inclui controle de status do funcionário ou departamento por meio do campo `ativo` (0 ou 1).  
-2. **`equipamento`**:
+### 2.1 Relacionamentos
 
-   - Consolida em uma única estrutura os equipamentos ou dispositivos inspecionados e as próprias Máquinas de Medição por Coordenadas (MMC) utilizadas como padrão.  
-   - O campo `tipo` (`'MMC'` ou `'INSTRUMENTO'`) categoriza o dispositivo.  
-   - Guarda TAG único, número de série, fabricante, modelo, especificações do desenho (`drawing_no`), código de peça (`part_no`), dados de rastreabilidade e a referência (`fk_solicitante_id`) ao setor ou responsável proprietário.  
-3. **`medicao`**:
+- Um **equipamento** pode ter **muitas medições** (`medicao.fk_equipamento_id` → `equipamento.id_equipamento`). Esta é a ligação entre equipamentos e medições exigida no roteiro.
+- Uma medição também aponta, de forma opcional, para a **MMC usada como padrão** (`medicao.fk_padrao_id` → `equipamento.id_equipamento`). Por isso a MMC fica na mesma tabela dos demais equipamentos, distinguida pelo campo `tipo`.
+- Um **técnico** pode executar **muitas medições** (`medicao.fk_tecnico_id` → `tecnico_solicitante.id_tecnico`).
+- Um **solicitante** pode ser dono de **vários equipamentos** (`equipamento.fk_solicitante_id`, opcional: nulo para equipamento interno).
 
-   - Registra o resultado dimensional de cada característica aferida no software de medição.  
-   - Realiza a amarração de rastreabilidade através de 3 Chaves Estrangeiras (`FK`):  
-     - `fk_equipamento_id` $\rightarrow$ Equipamento ou peça que foi calibrada.  
-     - `fk_padrao_id` $\rightarrow$ Máquina MMC / Padrão utilizado no ensaio.  
-     - `fk_tecnico_id` $\rightarrow$ Metrologista responsável pela execução.  
-   - Consolida dados do certificado, plano de medição, tolerâncias, valores lidos, desvios e o status final (`'APROVADO'`, `'REPROVADO'`, `'PENDENTE'`).
+### 2.2 Diagrama (Mermaid)
 
-**OBS**: A modelagem foi simplificada, reduzindo o número de tabelas/entidades em comparação à versão apresentada no Projeto Aplicado I, conforme recomendação do professor e visando facilitar o entendimento de todos os integrantes do grupo.
+```mermaid
+erDiagram
+    TECNICO_SOLICITANTE ||--o{ EQUIPAMENTO : "e dono de"
+    TECNICO_SOLICITANTE ||--o{ MEDICAO : "executa"
+    EQUIPAMENTO ||--o{ MEDICAO : "e calibrado em"
+    EQUIPAMENTO |o--o{ MEDICAO : "e padrao em"
 
-## 3\. Integridade de Dados, Validações e Normalização
+    TECNICO_SOLICITANTE {
+        INTEGER id_tecnico PK
+        TEXT matricula UK
+        TEXT nome
+        TEXT papel
+    }
+    EQUIPAMENTO {
+        INTEGER id_equipamento PK
+        TEXT tag_equipamento UK
+        TEXT numero_serie UK
+        TEXT tipo
+        INTEGER fk_solicitante_id FK
+    }
+    MEDICAO {
+        INTEGER id_medicao PK
+        INTEGER fk_equipamento_id FK
+        INTEGER fk_padrao_id FK
+        INTEGER fk_tecnico_id FK
+        TEXT codigo
+        REAL valor_nominal
+        REAL valor_obtido
+        REAL desvio
+        TEXT status
+    }
+```
+### 2.2 Diagrama Entidade e Relacionamento - Modelo Lógico
+![Diagrama Lógico](./DER_Banco_Schulz.png)
 
-A solução resolve os problemas de consistência e integridade dos dados no modelo em planilhas através da aplicação de restrições nativas do SGBD:
+## 3. Por que evitar dados duplicados
 
-* **Validação Automática de Desvios:** O banco de dados garante matematicamente a consistência dos cálculos através da restrição `CHECK (abs(desvio - (valor_obtido - valor_nominal)) < 0.000001)`.  
-* **Prevenção de Duplicidade:** A restrição composta `UNIQUE (fk_equipamento_id, data_hora_medicao, codigo)` impede a inserção duplicada de uma mesma característica para o mesmo equipamento no mesmo instante de medição.  
-* **Integridade Referencial:** Restrições `FOREIGN KEY ... ON DELETE RESTRICT` e a instrução `PRAGMA foreign_keys = ON;` impedem a exclusão acidental de equipamentos ou técnicos que possuam histórico de medição.  
-* **Otimização de Consultas:** Criação de Índices secundários (`idx_equipamento_solicitante`, `idx_medicao_equipamento` e `idx_medicao_tecnico`) para acelerar a geração de relatórios e pesquisas de histórico metrológico.
+Nas planilhas atuais, a mesma informação era digitada várias vezes: o nome do metrologista, os dados do equipamento, o número de série. Isso gera quatro problemas:
 
-## 4\. Diagrama ER Conceitual
+1. **Inconsistência:** o mesmo técnico ou setor aparece com grafias diferentes ("Metrologia", "METROLOGIA ", "Metrol."), e uma consulta por nome deixa de encontrar tudo.
+2. **Manutenção cara:** corrigir um dado repetido em muitos lugares exige alterar todos, e basta esquecer um para o banco se contradizer.
+3. **Risco em auditoria:** numa auditoria ISO/IEC 17025 não pode haver duas versões do mesmo dado. O certificado precisa ser rastreável até um único registro do equipamento e do técnico.
+4. **Erros de digitação:** cada cópia manual é uma chance de erro, como os desvios que não batiam com a conta (valor obtido − nominal) na análise da Entrega 01.
 
-![Diagrama de Entidade Relacionamento](./DER_Banco_Schulz.png)
+**Como o modelo evita a duplicidade:**
+
+- Cada técnico e cada equipamento são cadastrados **uma única vez**; as medições apenas **referenciam** o cadastro por chave estrangeira (FK).
+- Restrições `UNIQUE` em matrícula, TAG e número de série impedem cadastros repetidos.
+- A restrição `UNIQUE (fk_equipamento_id, data_hora_medicao, codigo)` impede a mesma característica de ser lançada duas vezes na mesma calibração.
+- `ON DELETE RESTRICT` impede apagar um técnico ou equipamento que já tenha histórico, preservando a rastreabilidade.
+- Um `CHECK` garante que `desvio = valor_obtido − valor_nominal`, o que elimina o desvio digitado à mão.
+
+## 4. Decisões de projeto e limitações assumidas
+
+- **Chaves numéricas** (`INTEGER PRIMARY KEY`): mais leves e rápidas que texto, e o SQLite as numera automaticamente.
+- **Datas em texto ISO 8601** (`AAAA-MM-DD HH:MM:SS`): o SQLite não tem tipo de data próprio, e esse formato ordena corretamente.
+- **Tolerâncias aceitam nulo**, porque há características com tolerância unilateral (por exemplo, planicidade).
+- **Unidade explícita** (`mm`, `um`, `graus`): evita o erro de 1000× entre mm e µm encontrado nas planilhas.
+- **Parâmetro e valor nominal ficam em `medicao`**, e não em `equipamento`: um equipamento tem vários parâmetros, cada um com seu nominal. Em `equipamento` eles forçariam uma linha por parâmetro, repetindo TAG e número de série.
+- **Limitação consciente:** como o roteiro pede 3 tabelas, os dados que se repetem por calibração (`numero_certificado`, `data_hora_medicao`, `fk_tecnico_id`, `plano_medicao`) ficam na `medicao`, uma linha por característica.
+
+## 5. Evolução prevista (fora do escopo desta entrega)
+
+Numa fase seguinte, o modelo pode ser refinado para a 3FN completa, separando essas informações em uma tabela `certificado_calibracao`. Também está prevista uma tabela `parametro_equipamento`, que guardaria uma única vez o parâmetro e o valor nominal de cada equipamento, e uma tabela `incerteza_medicao` (incerteza expandida e fator k, conforme GUM/EA-4/02). Fica registrado aqui para não se perder o estudo do modelo de 7 entidades já desenhado pelo grupo.

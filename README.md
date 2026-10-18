@@ -8,7 +8,6 @@
 * [Caio Montinegro Barbosa](https://github.com/caiomsenai)
 * [Elisete Cristina Vidotti da Rocha](https://github.com/lizvidotti91)
 * Gabriela da Silva Brand
-* Júlia da Silva Antunes
 * Julio Cesar Braga
 
 ## Escopo das Entregas

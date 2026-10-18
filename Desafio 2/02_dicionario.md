@@ -23,7 +23,7 @@ Datas são guardadas como Texto no formato ISO 8601 (`AAAA-MM-DD HH:MM:SS`).
 |---|---|---|---|---|
 | `id_equipamento` | Inteiro | Sim | PK | Identificador único do equipamento |
 | `tag_equipamento` | Texto | Sim | UNIQUE | TAG ou código de identificação (ex.: código do padrão) |
-| `tipo` | Texto | Sim | CHECK: MMC, INSTRUMENTO | MMC (padrão) ou instrumento/dispositivo calibrado |
+| `tipo` | Texto | Sim | CHECK: MMC, INSTRUMENTO | Diferencia a função do item: MMC (padrão de medição) ou INSTRUMENTO (dispositivo calibrado) |
 | `numero_serie` | Texto | Sim | UNIQUE | Número de série do fabricante |
 | `nome_equipamento` | Texto | Sim | — | Nome do equipamento |
 | `fabricante` | Texto | Sim | Padrão 'NAO INFORMADO' | Fabricante |
@@ -33,6 +33,8 @@ Datas são guardadas como Texto no formato ISO 8601 (`AAAA-MM-DD HH:MM:SS`).
 | `part_no` | Texto | Não | — | Número da peça |
 | `rastreabilidade` | Texto | Não | — | Certificado que dá rastreabilidade ao padrão |
 | `fk_solicitante_id` | Inteiro | Não | FK → `tecnico_solicitante.id_tecnico` | Dono ou solicitante (nulo para equipamento interno) |
+
+> **Nota sobre `equipamento`:** esta tabela abstrai tanto a **MMC** (máquina de medição usada como padrão) quanto o **instrumento calibrado** (dispositivo de controle). O campo `tipo` diferencia a função de cada item na relação: em `medicao`, a chave `fk_equipamento_id` aponta para o instrumento calibrado e a chave `fk_padrao_id` aponta para a MMC utilizada. Assim, os dois tipos de equipamento ficam em uma única entidade, sem repetir cadastro.
 
 ## Tabela `medicao`
 
@@ -79,7 +81,7 @@ Os dados vêm da planilha gerada pelo software da MMC (Calypso) na calibração 
 | Lower Tol | `tolerancia_inferior` | `medicao` | Vazio = tolerância unilateral |
 | Actual (1º bloco) | `medida_1` | `medicao` | Primeira medição |
 | Actual (2º bloco) | `medida_2` | `medicao` | Segunda medição |
-| (calculado) | `valor_obtido` | `medicao` | Média de `medida_1` e `medida_2`; quando só existe `medida_1`, é igual a ela |
+| (calculado) | `valor_obtido` | `medicao` | Média de `medida_1` e `medida_2` |
 | Deviation | `desvio` | `medicao` | Passa a ser sempre `valor_obtido − valor_nominal` |
 | (calculado) | `status` | `medicao` | APROVADO ou REPROVADO, conforme as tolerâncias |
 | Measurement plan | `plano_medicao` | `medicao` | Programa executado |
@@ -104,4 +106,4 @@ Os dados vêm da planilha gerada pelo software da MMC (Calypso) na calibração 
 | Medição | Valor obtido | `valor_obtido` |
 | Medição | Data da medição | `data_hora_medicao` |
 
-**Nota:** `parametro` e `valor_nominal` ficam na tabela `medicao` porque cada equipamento tem vários parâmetros, cada um com seu nominal. Se fossem colunas de `equipamento`, a tabela teria uma linha por parâmetro e repetiria TAG e número de série, o que contraria o objetivo de evitar duplicidade. A tabela `parametro_equipamento` está prevista como evolução (ver `01_estrutura.md`).
+**Nota (confirmada pelo professor como correta do ponto de vista de modelagem e normalização):** `parametro` e `valor_nominal` ficam na tabela `medicao` porque cada equipamento tem vários parâmetros, cada um com seu nominal. Se fossem colunas de `equipamento`, a tabela teria uma linha por parâmetro e repetiria TAG e número de série, o que contraria o objetivo de evitar duplicidade. A tabela `parametro_equipamento` está prevista como evolução (ver `01_estrutura.md`).
