@@ -1,0 +1,1 @@
+# Para a comunicação entre as classes e o banco de dados
