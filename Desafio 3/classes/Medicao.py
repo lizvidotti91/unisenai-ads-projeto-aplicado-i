@@ -106,6 +106,35 @@ class Medicao:
         # Cálculo automático do desvio (valor_obtido - valor_nominal)
         self.desvio = self.valorObtido - self.valorNominal
 
+        # Se nenhum status foi informado (PENDENTE), calcula pela tolerância
+        if self.status == 'PENDENTE':
+            self.validarStatus()
+
+    # Validação metrológica: define APROVADO / REPROVADO comparando o desvio com as tolerâncias
+    def validarStatus(self):
+        """Define o status pela tolerância (tolerância = desvio permitido em relação ao nominal).
+
+        desvio > tolerância superior  -> REPROVADO
+        desvio < tolerância inferior  -> REPROVADO
+        dentro dos limites            -> APROVADO
+        sem nenhuma tolerância        -> PENDENTE (não há como decidir)
+        Aceita tolerância unilateral (apenas superior ou apenas inferior).
+        """
+        EPS = 1e-9  # folga para evitar erro de ponto flutuante (ex.: 0.0100000001 > 0.01)
+
+        # Recalcula o desvio, pois valorObtido/valorNominal podem ter sido alterados depois da criação
+        self.desvio = self.valorObtido - self.valorNominal
+
+        sup, inf = self.toleranciaSuperior, self.toleranciaInferior
+        if sup is None and inf is None:
+            self.status = 'PENDENTE'
+            return self.status
+
+        acima = sup is not None and self.desvio > sup + EPS
+        abaixo = inf is not None and self.desvio < inf - EPS
+        self.status = 'REPROVADO' if (acima or abaixo) else 'APROVADO'
+        return self.status
+
     def exibirDadosMedicao(self):
         return (f"Medição [ID: {self.idMedicao}] | Código: {self.codigo} ({self.parametro}) | "
                 f"Nominal: {self.valorNominal} | Obtido: {self.valorObtido} | "
