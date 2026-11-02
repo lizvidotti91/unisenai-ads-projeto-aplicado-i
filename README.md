@@ -17,6 +17,8 @@
     * `02_dicionario.md`: Dicionário de dados mapeando tipos, restrições e regras de negócio de cada campo.
     * `03_banco.sql`: Script DDL executável para criação do banco de dados `schulz.db`.
 
+* [**Desafio 03 — Construção MVP Parte 1**](./Desafio%203/)
+
 ## Tecnologias Utilizadas
 * **SGBD:** SQLite
 * **Linguagem SQL:** DDL (Data Definition Language)
