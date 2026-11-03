@@ -17,8 +17,13 @@
     * `02_dicionario.md`: Dicionário de dados mapeando tipos, restrições e regras de negócio de cada campo.
     * `03_banco.sql`: Script DDL executável para criação do banco de dados `schulz.db`.
 
-* [**Desafio 03 — Construção MVP Parte 1**](./Desafio%203/)
+- [**Desafio 03 — Construção MVP Parte 1**](./Desafio%203/)
+    - `classes/`: Apresenta as classes principais (`TecnicoSolicitante`, `Equipamento`, `Medicao`) com as respectivas regras de negócio de cada uma
+    - `database/`: Apresenta as classes de conexão com o banco baseadas no padrão DAO (`TecnicoDAO`, `EquipamentoDAO`, `MedicaoDAO`), onde cada classe tem responsabilidade única
+  - **`04_classes.py`**: Ponto único de importação centralizada para todas as classes (principais e de conexão com o banco de dados).
+  - **`05_main.py`**: Script de demonstração que executa o fluxo funcional completo (criação do banco, injeção de dados de teste, validação metrológica de status, atualização de registos reprovados, tratamento de erros de SQL e impressão do Relatório de Calibração).
 
 ## Tecnologias Utilizadas
 * **SGBD:** SQLite
 * **Linguagem SQL:** DDL (Data Definition Language)
+* **Programação Orientada a Objetos** Python
