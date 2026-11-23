@@ -1,0 +1,22 @@
+# Cache e compilados do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# Bancos de dados SQLite gerados nos testes
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos temporarios de bloqueio do LibreOffice / Excel
+.~lock.*
+~$*
+
+# Configuracoes locais de editores
+.vscode/
+.idea/
