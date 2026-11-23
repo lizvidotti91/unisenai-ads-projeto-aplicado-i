@@ -1,4 +1,4 @@
-from classes.TecnicoSolicitante import TecnicoSolicitante
+from entidade.TecnicoSolicitante import TecnicoSolicitante
 from .conexao import ConexaoBanco
 
 

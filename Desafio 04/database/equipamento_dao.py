@@ -1,4 +1,4 @@
-from classes.Equipamento import Equipamento
+from entidade.Equipamento import Equipamento
 from .conexao import ConexaoBanco
 
 

@@ -1,4 +1,4 @@
-from classes.Medicao import Medicao
+from entidade.Medicao import Medicao
 from .conexao import ConexaoBanco
 
 

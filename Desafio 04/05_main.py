@@ -22,7 +22,7 @@ import sys
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, RAIZ)
 
-from classes import TecnicoSolicitante, Equipamento, Medicao
+from entidade import TecnicoSolicitante, Equipamento, Medicao
 from database import ConexaoBanco, TecnicoDAO, EquipamentoDAO, MedicaoDAO
 
 # Banco exclusivo da demonstracao (recriado a cada execucao).

@@ -18,7 +18,7 @@ Os scripts 05_main.py e exemplo_uso.py importam diretamente dos pacotes:
     from database import ConexaoBanco, TecnicoDAO, EquipamentoDAO, MedicaoDAO
 """
 
-from classes import TecnicoSolicitante, Equipamento, Medicao
+from entidade import TecnicoSolicitante, Equipamento, Medicao
 from database import ConexaoBanco, TecnicoDAO, EquipamentoDAO, MedicaoDAO
 
 __all__ = [
